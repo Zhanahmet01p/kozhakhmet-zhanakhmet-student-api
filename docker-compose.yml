@@ -1,0 +1,37 @@
+name: kozhakhmet-zhanakhmet-student-api
+services:
+  app:
+    build: .
+    image: kozhakhmet-zhanakhmet-student-api:v1.0-kozhakhmet-zhanakhmet
+    container_name: kozhakhmet-zhanakhmet-app
+    ports: ["8080:8080"]
+    environment:
+      SERVER_PORT: "8080"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/studentdb
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-student}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-student_local_password}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [student-api-network]
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine
+    container_name: kozhakhmet-zhanakhmet-db
+    environment:
+      POSTGRES_DB: studentdb
+      POSTGRES_USER: ${POSTGRES_USER:-student}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-student_local_password}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [student-api-network]
+    restart: unless-stopped
+networks:
+  student-api-network:
+    driver: bridge
+volumes:
+  postgres-data:
